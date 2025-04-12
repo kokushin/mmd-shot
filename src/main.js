@@ -30,6 +30,8 @@ function createWindow() {
   // マウス操作を有効化
   mainWindow.setIgnoreMouseEvents(false);
 
+  mainWindow.webContents.openDevTools();
+
   // 開発モードの場合はViteの開発サーバーを使用
   if (isDev) {
     console.log("開発モード: Vite開発サーバーを使用します");
@@ -90,4 +92,9 @@ ipcMain.handle("save-capture", async (event, imageData) => {
     console.error("画像保存中にエラーが発生しました:", error);
     return { success: false, error: error.message };
   }
+});
+
+// ユーザーデータパス取得ハンドラ
+ipcMain.handle("get-user-data-path", () => {
+  return app.getPath("userData");
 });
