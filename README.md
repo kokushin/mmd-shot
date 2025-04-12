@@ -23,7 +23,7 @@ MMD-Shot は、Babylon.js を使用して MMD（MikuMikuDance）モデルを表�
 
 ```bash
 # リポジトリをクローン
-git clone https://github.com/your-username/mmd-shot.git
+git clone https://github.com/kokushin/mmd-shot.git
 cd mmd-shot
 
 # 依存関係のインストール
