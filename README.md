@@ -32,7 +32,7 @@ npm run dev
 
 ## 環境設定
 
-`.env.example`ファイルをコピーして`.env`ファイルを作成し、必要に応じて設定を変更します。
+`.env.example`ファイルをコピーして`.env`ファイルを作成し、設定を変更します。
 
 ```bash
 cp .env.example .env
