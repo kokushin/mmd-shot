@@ -1,6 +1,6 @@
 # MMD-Shot 💫
 
-MMD-Shot は、Babylon.js を使用して MMD（MikuMikuDance）モデルを表示し、スクリーンショット撮影するための Web アプリケーションです。
+MMD-Shot は、Babylon.js を使用して MMD（MikuMikuDance）モデルを表示し、スクリーンショット撮影するための Electron アプリケーションです。
 
 <img width="240" alt="スクリーンショット 2025-04-13 4 29 51" src="https://github.com/user-attachments/assets/7b379ece-0402-46b6-8501-bdc1bbc34db1" />
 <img width="240" alt="スクリーンショット 2025-04-13 4 30 27" src="https://github.com/user-attachments/assets/4ae2d86f-993f-4a71-84a4-862b277f6748" />
@@ -12,12 +12,13 @@ MMD-Shot は、Babylon.js を使用して MMD（MikuMikuDance）モデルを表�
 - スクリーンショット機能
 - ポストプロセスエフェクト
 - モーションデータの適用
+- クロスプラットフォーム対応（macOS・Windows）
 
 ## 必要条件
 
 - Node.js 14.x 以上
 - npm 6.x 以上
-- モダンブラウザ（Chrome, Firefox, Safari, Edge など）
+- ビルド環境（macOS 向けビルドは macOS で、Windows 向けビルドは Windows で行う必要があります）
 
 ## インストール
 
@@ -56,8 +57,10 @@ VITE_BGM_PATH=./audios/your-bgm-file.mp3
 
 ## 使用方法
 
+### 開発モード
+
 1. 開発サーバーを起動（`npm run dev`）
-2. ブラウザで`http://localhost:5173`（または表示された URL）にアクセス
+2. Electron アプリケーションが自動的に起動します
 3. モデルが読み込まれたら、マウスでカメラを操作：
    - 左クリック+ドラッグ：カメラ回転
    - 右クリック+ドラッグ：カメラ移動
@@ -67,14 +70,20 @@ VITE_BGM_PATH=./audios/your-bgm-file.mp3
 ## ビルド方法
 
 ```bash
-# 本番用ビルド
+# 両方のプラットフォーム向けにビルド（現在の環境によって制限あり）
 npm run build
 
-# ビルドファイルのプレビュー
-npm run preview
+# macOS向けにビルド（macOS環境が必要）
+npm run build:mac
+
+# Windows向けにビルド（Windows環境が必要）
+npm run build:win
 ```
 
-ビルドされたファイルは`dist`ディレクトリに出力されます。
+ビルドされたファイルは`build`ディレクトリに出力されます：
+
+- macOS: `.dmg`ファイル (インストーラー)
+- Windows: `.exe`ファイル (インストーラー)
 
 ## カスタマイズ
 
@@ -98,6 +107,7 @@ npm run preview
 - MMD モデルとモーションファイルの利用は、それぞれの制作者の利用規約に従ってください
 - モデルデータの再配布は含まれていません。各自で合法的に取得したモデルを使用してください
 - このプロジェクトは学習・非商用目的での利用を想定しています
+- クロスプラットフォームビルドには制限があります（macOS 向けビルドは macOS で、Windows 向けビルドは Windows で行う必要があります）
 
 ## ライセンス
 
@@ -107,4 +117,5 @@ MIT License
 
 - [Babylon.js](https://www.babylonjs.com/) - 3D レンダリングエンジン
 - [babylon-mmd](https://github.com/noname0310/babylon-mmd) - Babylon.js での MMD サポート
+- [Electron](https://www.electronjs.org/) - クロスプラットフォームデスクトップアプリ開発フレームワーク
 - MMD モデル・モーションの制作者様

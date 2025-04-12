@@ -35,3 +35,6 @@ lerna-debug.log*
 models
 motions
 audios
+
+# ビルドデータ
+build
