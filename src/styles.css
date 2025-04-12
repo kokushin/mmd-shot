@@ -1,0 +1,345 @@
+/**
+ * MMD Shot スタイルシート
+ * 
+ * 目次:
+ * 1. カスタムローディング画面
+ * 2. 基本スタイル
+ * 3. アプリケーションコンテナ
+ * 4. カメラUIコントロール
+ * 5. キャプチャ画像表示エリア
+ * 6. シャッターエフェクト
+ * 7. 通知表示
+ */
+
+/* ===== 1. カスタムローディング画面 ===== */
+#custom-loading-screen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: #000;
+  z-index: 10000;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transition: opacity 0.5s ease;
+}
+
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 80%;
+  max-width: 300px;
+}
+
+.loading-logo {
+  font-size: 32px;
+  font-weight: bold;
+  color: #fff;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.loading-bar-container {
+  width: 100%;
+  height: 6px;
+  background-color: rgba(255, 255, 255, 0.2);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-bottom: 10px;
+}
+
+.loading-bar {
+  height: 100%;
+  width: 0%;
+  background-color: #007aff;
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+.loading-text {
+  color: #fff;
+  font-size: 14px;
+  text-align: center;
+}
+
+/* ===== 2. 基本スタイル ===== */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  overflow: hidden;
+  background-color: #000;
+}
+
+/* ===== 3. アプリケーションコンテナ ===== */
+#app-container {
+  position: relative;
+  width: 100%;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+#renderCanvas {
+  width: 100%;
+  height: 100%;
+  touch-action: none;
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 1;
+}
+
+/* ===== 4. カメラUIコントロール ===== */
+.camera-controls {
+  position: absolute;
+  bottom: 24px;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: space-between; /* 左右に分散配置 */
+  align-items: center;
+  z-index: 10;
+  padding: 0 20px; /* 左右の余白 */
+}
+
+/* カメラモード表示 */
+.camera-mode-indicator {
+  position: absolute;
+  top: -56px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: rgba(0, 0, 0, 0.6);
+  color: white;
+  padding: 5px 15px;
+  border-radius: 20px;
+  font-size: 14px;
+  transition: opacity 0.3s;
+}
+
+/* カメラモード切り替えボタン */
+.camera-mode-button {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background-color: rgba(0, 122, 255, 0.8);
+  border: 3px solid rgba(255, 255, 255, 0.5);
+  cursor: pointer;
+  transition: transform 0.2s;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+  position: relative;
+  z-index: 100;
+  margin-left: auto; /* 右端に配置 */
+}
+
+.camera-mode-button::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 24px;
+  height: 24px;
+  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white"><path d="M0 0h24v24H0z" fill="none"/><path d="M21 6.5l-4 4V7c0-.55-.45-1-1-1H9.82L21 17.18V6.5zM3.27 2L2 3.27 4.73 6H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.21 0 .39-.08.54-.18L19.73 21 21 19.73 3.27 2z"/></svg>');
+  background-repeat: no-repeat;
+  background-position: center;
+}
+
+.camera-mode-button:hover {
+  transform: scale(1.05);
+}
+
+.camera-mode-button:active {
+  transform: scale(0.95);
+  background-color: rgba(0, 100, 210, 0.8); /* クリック時の色変更 */
+}
+
+/* キャプチャボタン */
+.capture-button {
+  width: 70px;
+  height: 70px;
+  border-radius: 50%;
+  background-color: #fff;
+  border: 5px solid rgba(255, 255, 255, 0.5);
+  cursor: pointer;
+  transition: transform 0.2s;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+  position: absolute; /* 絶対位置指定 */
+  left: 50%; /* 左端から50%の位置 */
+  transform: translateX(-50%); /* 自身の幅の半分だけ左にずらして中央揃え */
+  z-index: 100; /* z-indexを上げて確実に前面に表示 */
+}
+
+.capture-button::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 90%;
+  height: 90%;
+  border-radius: 50%;
+  border: 2px solid rgba(0, 0, 0, 0.1);
+  box-sizing: border-box;
+}
+
+.capture-button:hover {
+  transform: translateX(-50%) scale(1.05);
+}
+
+.capture-button:active {
+  transform: translateX(-50%) scale(0.95);
+  background-color: #eee; /* クリック時の色変更 */
+}
+
+/* ===== 5. キャプチャ画像表示エリア ===== */
+.capture-view {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 9999; /* z-indexを最大限に上げて確実に最前面に表示 */
+  display: none;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  backdrop-filter: blur(5px); /* 背景をぼかす効果 */
+}
+
+.capture-view.active {
+  display: flex !important; /* !importantを使用して確実に表示 */
+  opacity: 1 !important;
+}
+
+.capture-image {
+  flex: 1;
+  object-fit: contain;
+  max-height: calc(100% - 70px); /* コントロールエリア分の高さを引く */
+  border: 4px solid #fff;
+  border-radius: 16px;
+}
+
+.capture-controls {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 70px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 30px;
+  background-color: transparent; /* 背景色を透明に変更 */
+  z-index: 10000;
+}
+
+.capture-control-button {
+  padding: 10px 24px;
+  border-radius: 24px;
+  border: none;
+  background-color: rgba(60, 60, 60, 0.6); /* 半透明のグレー */
+  color: white;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  backdrop-filter: blur(5px); /* 背景をぼかす効果 */
+  -webkit-backdrop-filter: blur(5px); /* Safari対応 */
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.capture-control-button:hover {
+  background-color: rgba(80, 80, 80, 0.7);
+  transform: translateY(-2px);
+}
+
+.capture-control-button:active {
+  transform: translateY(0);
+}
+
+.capture-control-button.done {
+  background-color: rgba(0, 122, 255, 0.8);
+}
+
+.capture-control-button.done:hover {
+  background-color: rgba(0, 105, 217, 0.9);
+}
+
+/* ===== 6. シャッターエフェクト ===== */
+.shutter-effect {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: #fff;
+  z-index: 9000;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.shutter-effect.active {
+  animation: shutter-animation 0.5s forwards;
+}
+
+@keyframes shutter-animation {
+  0% {
+    opacity: 0;
+  }
+  25% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+/* ===== 7. 通知表示 ===== */
+.notification {
+  position: fixed;
+  top: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: rgba(0, 0, 0, 0.7);
+  color: white;
+  padding: 12px 24px;
+  border-radius: 8px;
+  z-index: 10000;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s, visibility 0.3s;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  max-width: 90%;
+  text-align: center;
+}
+
+.notification.show {
+  opacity: 1;
+  visibility: visible;
+}
+
+.notification-message {
+  font-size: 16px;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.notification-message::before {
+  content: "✓";
+  margin-right: 8px;
+  font-size: 18px;
+  color: #4caf50;
+}

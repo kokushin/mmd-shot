@@ -1,0 +1,28 @@
+{
+  "name": "mmd-shot",
+  "version": "1.0.0",
+  "description": "MMDモデルを踊らせて、好きなタイミングで写真を撮れるWebアプリ",
+  "main": "src/main.js",
+  "scripts": {
+    "dev": "concurrently --kill-others \"npm run dev:vite\" \"npm run dev:electron\"",
+    "dev:vite": "vite",
+    "dev:electron": "cross-env NODE_ENV=development electron src/main.js",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "start": "electron .",
+    "tsc": "tsc"
+  },
+  "license": "MIT",
+  "devDependencies": {
+    "@types/electron": "^1.4.38",
+    "@types/node": "^22.14.1",
+    "@vitejs/plugin-react": "^4.3.4",
+    "concurrently": "^9.1.2",
+    "cross-env": "^7.0.3",
+    "electron": "^34.5.1",
+    "electron-vite": "^3.1.0",
+    "typescript": "^5.8.3",
+    "vite": "^6.2.6"
+  },
+  "dependencies": {}
+}
