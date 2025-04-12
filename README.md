@@ -1,4 +1,4 @@
-# MMD-Shot
+# MMD-Shot 💫
 
 MMD-Shot は、Babylon.js を使用して MMD（MikuMikuDance）モデルを表示し、スクリーンショット撮影するための Web アプリケーションです。
 
