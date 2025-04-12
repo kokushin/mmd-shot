@@ -30,8 +30,6 @@ function createWindow() {
   // マウス操作を有効化
   mainWindow.setIgnoreMouseEvents(false);
 
-  mainWindow.webContents.openDevTools();
-
   // 開発モードの場合はViteの開発サーバーを使用
   if (isDev) {
     console.log("開発モード: Vite開発サーバーを使用します");
