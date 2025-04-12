@@ -1,7 +1,7 @@
 {
   "name": "mmd-shot",
   "version": "1.0.0",
-  "description": "MMDモデルを踊らせて、好きなタイミングで写真を撮れるWebアプリ",
+  "description": "MMDモデルを踊らせて、好きなタイミングで写真を撮れるアプリ",
   "main": "src/main.js",
   "scripts": {
     "dev": "concurrently --kill-others \"npm run dev:vite\" \"npm run dev:electron\"",
