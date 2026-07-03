@@ -1,49 +1,59 @@
 /**
- * 環境変数を管理するユーティリティ
+ * 環境変数とアセットパスを管理するユーティリティ
+ * アセットのデフォルトパスは .env (VITE_*) で指定する
  */
 
-// Viteの環境変数は import.meta.env 経由でアクセス
-// path モジュールを削除し、ブラウザ互換のパス処理に変更
+// パスの各セグメントをURLエンコードする (日本語・中国語ファイル名対応)
+function encodeAssetPath(relativePath: string): string {
+  return relativePath
+    .split("/")
+    .map((segment) => encodeURIComponent(segment))
+    .join("/");
+}
 
-// 開発環境とビルド環境で適切なパスを返す関数
-function getAssetPath(relativePath: string): string {
-  const isProduction = import.meta.env.PROD;
+/**
+ * アセットの相対パス (例: "models/foo/bar.pmx") をロード可能なURLに解決する
+ * - 開発: Vite開発サーバーのルート相対
+ * - 本番 (Electron): app://assets/ プロトコル経由でリソースフォルダから配信
+ */
+export function resolveAssetUrl(relativePath: string): string {
+  const clean = relativePath.replace(/^\.\//, "");
+  const isElectronProd =
+    typeof window !== "undefined" && window.electronAPI !== undefined && import.meta.env.PROD;
 
-  // 実行環境がElectronの場合（windowオブジェクトが存在する場合）
-  if (typeof window !== "undefined" && (window as any).electronAPI) {
-    if (isProduction) {
-      // 本番環境では、パスを適切に解決する
-      // path.dirname を使わずにパスの最後のスラッシュまでを取得
-      const pathname = (window as any).location.pathname;
-      const appPath = pathname.substring(0, pathname.lastIndexOf("/"));
-      return `${appPath}/${relativePath}`;
-    }
+  if (isElectronProd) {
+    return `app://assets/${encodeAssetPath(clean)}`;
   }
+  return `./${encodeAssetPath(clean)}`;
+}
 
-  // 開発環境では相対パス
-  return `./${relativePath}`;
+function stripPrefix(value: string | undefined): string | null {
+  if (value === undefined || value.trim() === "") {
+    return null;
+  }
+  return value.replace(/^\.\//, "");
 }
 
 /**
- * モデルのパスを取得
+ * .env で指定されたデフォルトアセットの相対パス一式
  */
-export function getModelPath(): string {
-  const modelPath = import.meta.env.VITE_MODEL_PATH as string;
-  return getAssetPath(modelPath);
-}
-
-/**
- * モーションのパスを取得
- */
-export function getMotionPath(): string {
-  const motionPath = import.meta.env.VITE_MOTION_PATH as string;
-  return getAssetPath(motionPath);
-}
-
-/**
- * BGMのパスを取得
- */
-export function getBgmPath(): string {
-  const bgmPath = import.meta.env.VITE_BGM_PATH as string;
-  return getAssetPath(bgmPath);
+export function getDefaultAssetPaths(): {
+  model: string;
+  motion: string;
+  audio: string | null;
+  camera: string | null;
+  stage: string | null;
+} {
+  const model = stripPrefix(import.meta.env.VITE_MODEL_PATH as string | undefined);
+  const motion = stripPrefix(import.meta.env.VITE_MOTION_PATH as string | undefined);
+  if (model === null || motion === null) {
+    throw new Error("VITE_MODEL_PATH / VITE_MOTION_PATH を .env に設定してください");
+  }
+  return {
+    model,
+    motion,
+    audio: stripPrefix(import.meta.env.VITE_BGM_PATH as string | undefined),
+    camera: stripPrefix(import.meta.env.VITE_CAMERA_PATH as string | undefined),
+    stage: stripPrefix(import.meta.env.VITE_STAGE_PATH as string | undefined),
+  };
 }

@@ -5,35 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>MMD Shot 💫</title>
 
-    <!-- スタイルシート -->
-    <script type="module">
-      import "./src/styles.css";
-    </script>
-
-    <!-- Babylon.js (ローカルファイル) -->
-    <script src="libs/dat-gui/dat.gui.min.js"></script>
-    <script src="libs/babylon/Assets.js"></script>
-    <script src="libs/babylon/recast.js"></script>
-    <script src="libs/babylon/ammo.js"></script>
-    <script src="libs/babylon/HavokPhysics_umd.js"></script>
-    <script src="libs/babylon/cannon.js"></script>
-    <script src="libs/babylon/Oimo.js"></script>
-    <script src="libs/babylon/earcut.min.js"></script>
-    <script src="libs/babylon/babylon.js"></script>
-    <script src="libs/babylon/babylonjs.materials.min.js"></script>
-    <script src="libs/babylon/babylonjs.proceduralTextures.min.js"></script>
-    <script src="libs/babylon/babylonjs.postProcess.min.js"></script>
-    <script src="libs/babylon/babylonjs.loaders.js"></script>
-    <script src="libs/babylon/babylonjs.serializers.min.js"></script>
-    <script src="libs/babylon/babylon.gui.min.js"></script>
-    <script src="libs/babylon/babylon.inspector.bundle.js"></script>
-
-    <!-- アプリケーションスクリプト -->
-    <script type="module">
-      import "./src/renderer.js";
-      import "./src/capture.js";
-      import "./src/app.js";
-    </script>
+    <!-- アプリケーションスクリプト (Babylon.js / babylon-mmd はESMバンドルに含まれる) -->
+    <script type="module" src="./src/app.ts"></script>
   </head>
   <body>
     <!-- カスタムローディング画面 -->
@@ -61,9 +34,40 @@
 
       <!-- カメラUIコントロール -->
       <div class="camera-controls">
-        <div id="camera-mode-indicator" class="camera-mode-indicator">顔追従モード</div>
-        <div id="camera-mode-button" class="camera-mode-button"></div>
+        <div id="camera-mode-indicator" class="camera-mode-indicator">カメラ: 自動</div>
+        <div id="effect-preset-button" class="effect-preset-button">✨ リッチ</div>
         <div id="capture-button" class="capture-button"></div>
+        <div id="camera-mode-button" class="camera-mode-button"></div>
+      </div>
+
+      <!-- アセット選択パネル -->
+      <div id="asset-panel-button" class="asset-panel-button" title="アセット選択">📁</div>
+      <div id="asset-panel" class="asset-panel">
+        <div class="asset-panel-title">アセット選択</div>
+        <label class="asset-panel-row">
+          <span>モデル</span>
+          <select id="asset-select-model"></select>
+        </label>
+        <label class="asset-panel-row">
+          <span>モーション</span>
+          <select id="asset-select-motion"></select>
+        </label>
+        <label class="asset-panel-row">
+          <span>カメラ</span>
+          <select id="asset-select-camera"></select>
+        </label>
+        <label class="asset-panel-row">
+          <span>ステージ</span>
+          <select id="asset-select-stage"></select>
+        </label>
+        <label class="asset-panel-row">
+          <span>音楽</span>
+          <select id="asset-select-audio"></select>
+        </label>
+        <div class="asset-panel-actions">
+          <button id="asset-panel-close" class="capture-control-button">閉じる</button>
+          <button id="asset-panel-apply" class="capture-control-button done">適用</button>
+        </div>
       </div>
 
       <!-- キャプチャ画像表示エリア -->

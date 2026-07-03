@@ -1,5 +1,14 @@
-// electron.d.ts
-// Electronアプリケーションのプレロードスクリプトで定義されたAPIの型定義
+// electron.d.ts - プリロードスクリプトで公開されるAPIの型定義
+
+/** アセットスキャン結果の1件 */
+interface AssetEntry {
+  /** ファイル名 */
+  name: string;
+  /** アセットルートからの相対パス (例: "models/foo/bar.pmx") */
+  path: string;
+}
+
+type AssetCategory = "models" | "motions" | "cameras" | "stages" | "audios";
 
 interface ElectronAPI {
   saveCaptureImage: (imageData: string) => Promise<{
@@ -8,17 +17,11 @@ interface ElectronAPI {
     message?: string;
     error?: string;
   }>;
+  listAssets: (category: AssetCategory) => Promise<AssetEntry[]>;
+  getPath: (name: string) => Promise<string> | string;
+  isProduction: boolean;
 }
 
-// グローバルなWindow interfaceを拡張
 declare interface Window {
-  electronAPI: ElectronAPI;
-  captureImage: string;
-  mmdShotApp: {
-    setSceneReference: (scene: any, mmdRuntime: any, audioPlayer: any) => void;
-    pauseAnimation: () => void;
-    resumeAnimation: () => void;
-    toggleCameraMode: () => void;
-    [key: string]: any;
-  };
+  electronAPI?: ElectronAPI;
 }

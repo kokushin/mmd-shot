@@ -1,35 +1,15 @@
 import { defineConfig } from "vite";
 import { resolve } from "path";
-import fs from 'fs-extra';
-import path from 'path';
 
-// カスタムプラグイン: 静的ファイルをコピーする
-function copyAssets() {
-  return {
-    name: 'vite:copy-assets',
-    enforce: 'post' as const, // 'pre'または'post'の型を明示
-    apply: 'build' as const,  // applyにもconst assertionを追加
-    async closeBundle() {
-      const assetFolders = ['libs', 'models', 'motions', 'audios'];
-      
-      for (const folder of assetFolders) {
-        if (fs.existsSync(folder)) {
-          await fs.copy(
-            path.resolve(folder),
-            path.resolve('dist', folder),
-            { overwrite: true }
-          );
-          console.log(`Copied ${folder} to dist/${folder}`);
-        }
-      }
-    }
-  };
-}
+// 本番アセットはelectron-builderのextraResources + app://assetsプロトコルで配信するため、
+// distへのコピーは不要
 
 // https://vitejs.dev/config/
 export default defineConfig({
   base: "./",
   build: {
+    // Electron 34 (Chromium 132) 向け
+    target: "esnext",
     outDir: "dist",
     assetsDir: "assets",
     emptyOutDir: true,
@@ -39,15 +19,18 @@ export default defineConfig({
       },
     },
   },
-  plugins: [
-    copyAssets()
-  ],
   server: {
     port: 5173,
-    open: false, // ブラウザを自動的に開かない
+    open: false,
+    watch: {
+      // electron-builderの出力とアセットフォルダは監視しない (ページリロード防止)
+      ignored: ["**/build/**", "**/dist/**", "**/models/**", "**/motions/**", "**/audios/**", "**/cameras/**", "**/stages/**"],
+    },
   },
-  // Electronのプリロードスクリプトを処理するための設定
   optimizeDeps: {
-    exclude: ["electron"],
+    // babylon-mmd: WASMを import.meta.url 経由でロードするため事前バンドル不可
+    // @babylonjs/core: babylon-mmdと同一インスタンスを共有する必要があるため除外
+    //   (事前バンドルするとSceneLoaderのプラグインレジストリが分裂しPMXローダーが見つからなくなる)
+    exclude: ["electron", "babylon-mmd", "@babylonjs/core"],
   },
 });

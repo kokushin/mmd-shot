@@ -1,102 +1,120 @@
-// MMD Shot アプリケーションのメインTypeScriptファイル
-import { isDev, debug } from "./utils";
-import * as Engine from "./core/engine";
-import * as Scene from "./core/scene";
+// app.ts - MMD Shot エントリポイント
+import "./mmd/sideEffects";
+import "./styles.css";
 
-// 開発モードの場合はデバッグ情報を表示
-if (isDev) {
-  debug("app.tsを読み込みました");
-}
+import { RegisterDxBmpTextureLoader } from "babylon-mmd/esm/Loader/registerDxBmpTextureLoader";
 
-// アプリケーション初期化
-window.addEventListener("DOMContentLoaded", initializeApp);
-window.addEventListener("resize", Engine.handleResize);
+import { CaptureController } from "./capture";
+import type { AppContext, AssetSelection } from "./core/context";
+import { createEngine } from "./core/engine";
+import { buildScene } from "./core/sceneBuilder";
+import { createPhysicsRuntime } from "./mmd/runtime";
+import { EFFECT_PRESET_LABELS } from "./rendering/presets";
+import { AssetPanel } from "./ui/assetPanel";
+import { LoadingScreen } from "./ui/loading";
+import { getDefaultAssetPaths, resolveAssetUrl } from "./utils/env";
 
-/**
- * アプリケーションの初期化
- */
-function initializeApp(): void {
-  console.log("アプリケーションを初期化しています...");
+window.addEventListener("DOMContentLoaded", () => {
+  void main();
+});
 
-  // キャンバスの取得
-  const canvas = document.getElementById("renderCanvas") as HTMLCanvasElement;
-  Engine.setCanvas(canvas);
-
-  // Babylon.jsエンジンの初期化
-  (window as any)
-    .initFunction()
-    .then(() => {
-      console.log("初期化関数が完了しました");
-    })
-    .catch((error: any) => {
-      console.error("初期化中にエラーが発生しました:", error);
-    });
-
-  // UIイベントリスナーの設定
-  setupEventListeners();
-}
-
-/**
- * UIイベントリスナーの設定
- */
-function setupEventListeners(): void {
-  // キャプチャボタンのイベントリスナー
-  const captureButton = document.getElementById("capture-button");
-  if (captureButton) {
-    console.log("キャプチャボタンを設定しています");
-    captureButton.addEventListener("click", captureScene);
-  } else {
-    console.error("キャプチャボタンが見つかりません");
+async function main(): Promise<void> {
+  const canvas = document.getElementById("renderCanvas") as HTMLCanvasElement | null;
+  if (canvas === null) {
+    throw new Error("renderCanvasが見つかりません");
   }
+
+  const loading = new LoadingScreen();
+  const engine = createEngine(canvas);
+  RegisterDxBmpTextureLoader();
+
+  // 物理ランタイム (WASM) はアプリ生存期間で1つだけ作成して使い回す
+  loading.report("物理エンジンを初期化中...", 0.02);
+  const physics = await createPhysicsRuntime();
+
+  const defaults = getDefaultAssetPaths();
+  const initialSelection: AssetSelection = {
+    modelUrl: resolveAssetUrl(defaults.model),
+    motionUrl: resolveAssetUrl(defaults.motion),
+    audioUrl: defaults.audio !== null ? resolveAssetUrl(defaults.audio) : null,
+    cameraMotionUrl: defaults.camera !== null ? resolveAssetUrl(defaults.camera) : null,
+    stageUrl: defaults.stage !== null ? resolveAssetUrl(defaults.stage) : null,
+  };
+
+  let context: AppContext | null = null;
+  let building = false;
+
+  const cameraModeIndicator = document.getElementById("camera-mode-indicator");
+  const updateCameraIndicator = (): void => {
+    if (cameraModeIndicator !== null && context !== null) {
+      cameraModeIndicator.textContent = context.cameraManager.label;
+    }
+  };
+  const presetButton = document.getElementById("effect-preset-button");
+  const updatePresetButton = (): void => {
+    if (presetButton !== null && context !== null) {
+      presetButton.textContent = `✨ ${EFFECT_PRESET_LABELS[context.effects.preset]}`;
+    }
+  };
+
+  // シーンの構築 / 再構築 (アセット切替時)
+  const rebuild = async (selection: AssetSelection): Promise<void> => {
+    if (building) {
+      return;
+    }
+    building = true;
+    const previous = context;
+    context = null;
+    try {
+      previous?.dispose();
+    } catch (error) {
+      console.error("シーン破棄中にエラーが発生しました:", error);
+    }
+    loading.show();
+    try {
+      context = await buildScene(engine, canvas, selection, loading, physics);
+      loading.finish();
+      updateCameraIndicator();
+      updatePresetButton();
+    } catch (error) {
+      console.error("シーンの構築に失敗しました:", error);
+      loading.showError(`読み込みに失敗しました: ${(error as Error).message}`);
+    } finally {
+      building = false;
+    }
+  };
+
+  await rebuild(initialSelection);
+
+  // 撮影機能
+  const capture = new CaptureController(() => context);
+  capture.init();
+
+  // カメラモード切替
+  document.getElementById("camera-mode-button")?.addEventListener("click", () => {
+    context?.cameraManager.cycle();
+    updateCameraIndicator();
+  });
+
+  // エフェクトプリセット切替
+  presetButton?.addEventListener("click", () => {
+    context?.effects.togglePreset();
+    updatePresetButton();
+  });
+
+  // アセット選択パネル
+  const assetPanel = new AssetPanel(defaults, (selection) => {
+    void rebuild(selection);
+  });
+  await assetPanel.init();
+
+  // レンダリングループ
+  engine.runRenderLoop(() => {
+    if (context !== null && context.scene.activeCamera !== null) {
+      context.scene.render();
+    }
+  });
+  window.addEventListener("resize", () => {
+    engine.resize();
+  });
 }
-
-/**
- * シーンをキャプチャする関数
- */
-function captureScene(): void {
-  console.log("キャプチャボタンがクリックされました（addEventListener）");
-
-  // グローバル関数が存在するか確認
-  if (typeof (window as any).captureMMDScene === "function") {
-    console.log("window.captureMMDSceneを呼び出します");
-    (window as any).captureMMDScene();
-  } else {
-    console.error("window.captureMMDSceneが関数として存在しません");
-    alert("キャプチャ機能が初期化されていません");
-  }
-}
-
-/**
- * 初期化関数
- */
-(window as any).initFunction = async function (): Promise<void> {
-  try {
-    // HavokPhysicsの初期化
-    console.log("HavokPhysicsを初期化中...");
-    (globalThis as any).HK = await (HavokPhysics as any)();
-    console.log("HavokPhysicsが初期化されました");
-
-    // エンジンを初期化
-    console.log("エンジンを初期化中...");
-    const engine = await Engine.createEngineAsync();
-    (window as any).engine = engine;
-    console.log("エンジンが初期化されました");
-
-    if (!engine) throw new Error("engine should not be null.");
-
-    // シーンを作成してグローバル変数とwindowオブジェクトの両方に代入
-    console.log("シーンを作成中...");
-    const scene = await Scene.createScene();
-    (window as any).scene = scene;
-    Scene.setSceneToRender(scene);
-    console.log("シーンが作成されました");
-
-    // レンダリングループの開始
-    console.log("レンダリングループを開始します");
-    Engine.startRenderLoop(Scene.getSceneToRender());
-    console.log("レンダリングループが開始されました");
-  } catch (error) {
-    console.error("初期化中にエラーが発生しました:", error);
-    throw error;
-  }
-};

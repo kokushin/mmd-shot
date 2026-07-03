@@ -162,6 +162,30 @@ body {
   background-color: rgba(0, 100, 210, 0.8); /* クリック時の色変更 */
 }
 
+/* エフェクトプリセット切替ボタン */
+.effect-preset-button {
+  background-color: rgba(0, 0, 0, 0.6);
+  color: white;
+  padding: 8px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color 0.2s, transform 0.2s;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+  z-index: 100;
+  user-select: none;
+}
+
+.effect-preset-button:hover {
+  background-color: rgba(40, 40, 40, 0.7);
+  transform: scale(1.05);
+}
+
+.effect-preset-button:active {
+  transform: scale(0.95);
+}
+
 /* キャプチャボタン */
 .capture-button {
   width: 70px;
@@ -198,6 +222,95 @@ body {
 .capture-button:active {
   transform: translateX(-50%) scale(0.95);
   background-color: #eee; /* クリック時の色変更 */
+}
+
+/* ===== 4.5. アセット選択パネル ===== */
+.asset-panel-button {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background-color: rgba(0, 0, 0, 0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 18px;
+  cursor: pointer;
+  z-index: 100;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+  transition: transform 0.2s;
+  user-select: none;
+}
+
+.asset-panel-button:hover {
+  transform: scale(1.08);
+}
+
+.asset-panel {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background-color: rgba(20, 20, 26, 0.92);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-radius: 20px 20px 0 0;
+  padding: 20px 20px 28px;
+  z-index: 200;
+  transform: translateY(110%);
+  transition: transform 0.3s ease;
+  box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.4);
+}
+
+.asset-panel.open {
+  transform: translateY(0);
+}
+
+.asset-panel-title {
+  color: #fff;
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 14px;
+  text-align: center;
+}
+
+.asset-panel-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 10px;
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 13px;
+}
+
+.asset-panel-row span {
+  width: 72px;
+  flex-shrink: 0;
+}
+
+.asset-panel-row select {
+  flex: 1;
+  min-width: 0;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background-color: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  font-size: 13px;
+  outline: none;
+}
+
+.asset-panel-row select option {
+  background-color: #1c1c22;
+  color: #fff;
+}
+
+.asset-panel-actions {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 18px;
 }
 
 /* ===== 5. キャプチャ画像表示エリア ===== */
