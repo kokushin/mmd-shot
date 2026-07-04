@@ -1,6 +1,7 @@
 // sceneBuilder.ts - MMDシーンの構築
 import { AbstractMesh, Color3, Color4, Engine, Scene, Vector3 } from "@babylonjs/core";
 import type { MmdAnimation } from "babylon-mmd/esm/Loader/Animation/mmdAnimation";
+import { PmxObject } from "babylon-mmd/esm/Loader/Parser/pmxObject";
 import type { MmdMesh } from "babylon-mmd/esm/Runtime/mmdMesh";
 import { MmdCamera } from "babylon-mmd/esm/Runtime/mmdCamera";
 import { StreamAudioPlayer } from "babylon-mmd/esm/Runtime/Audio/streamAudioPlayer";
@@ -9,11 +10,12 @@ import { MmdPlayerControl } from "babylon-mmd/esm/Runtime/Util/mmdPlayerControl"
 import { AutoCameraDirector } from "../camera/autoCameraDirector";
 import { CameraModeManager, createManualCameras } from "../camera/cameraModeManager";
 import { loadMmdModel, loadMmdStage, loadMotion } from "../loading/assetLoader";
+import { collectHeadMeshes } from "../mmd/headMeshes";
 import { createMaterialBuilder } from "../mmd/materials";
 import { createMmdRuntime, PhysicsSet } from "../mmd/runtime";
 import { createLighting } from "../rendering/lighting";
 import { EffectPipeline } from "../rendering/presets";
-import { createProceduralStage } from "../stage/proceduralStage";
+import { BRIGHT_STAGE_SELECT_VALUE, createProceduralStage } from "../stage/proceduralStage";
 import type { AppContext, AssetSelection, LoadingReporter } from "./context";
 
 /**
@@ -27,6 +29,10 @@ export async function buildScene(
   physics: PhysicsSet
 ): Promise<AppContext> {
   console.log("シーンを構築します:", selection.modelUrl);
+  // ビルトインステージの特殊値はPMXとしてロードしない
+  const builtinStageVariant = selection.stageUrl === BRIGHT_STAGE_SELECT_VALUE ? "brightStudio" : "neon";
+  const stagePmxUrl = selection.stageUrl !== null && selection.stageUrl !== BRIGHT_STAGE_SELECT_VALUE ? selection.stageUrl : null;
+
   const scene = new Scene(engine);
   scene.clearColor = new Color4(0.02, 0.02, 0.035, 1.0);
   // MMDのシェーディング再現にはambientColor 0.5が必須
@@ -54,22 +60,48 @@ export async function buildScene(
     selection.cameraMotionUrl !== null
       ? loadMotion("camera", selection.cameraMotionUrl, scene, reporter, "カメラモーション")
       : Promise.resolve<MmdAnimation | null>(null),
-    selection.stageUrl !== null
-      ? loadMmdStage(selection.stageUrl, scene, createMaterialBuilder(), reporter)
+    stagePmxUrl !== null
+      ? loadMmdStage(stagePmxUrl, scene, createMaterialBuilder(), reporter)
       : Promise.resolve<MmdMesh | null>(null),
   ]);
 
   reporter.report("シーンを構築中...", 0.95);
 
   // モデルにモーションをバインド
-  const mmdModel = mmdRuntime.createMmdModel(modelMesh);
+  // disableOffsetForConstraintFrame: デフォルトのコンストレイントフレームオフセットはMMDと挙動が異なり、
+  // ロング丈スカートのジョイントが休止姿勢へ戻らず傘状に広がったままになる。MMD再現にはtrueが必要
+  // (コンストレイント破綻対策として物理側の fixedTimeStep を 1/120 にしている: src/mmd/runtime.ts)
+  const mmdModel = mmdRuntime.createMmdModel(modelMesh, {
+    buildPhysics: {
+      disableOffsetForConstraintFrame: true,
+    },
+  });
   const modelAnimationHandle = mmdModel.createRuntimeAnimation(motion);
   mmdModel.setRuntimeAnimation(modelAnimationHandle);
 
-  // モデルの影
-  shadowGenerator.addShadowCaster(modelMesh);
+  // モデルのセルフシャドウ: PMXの材質フラグに従う。
+  // ただし頭部メッシュ (顔・目・口・髪) は受けフラグが立っていても影を受けない
+  // (前髪や鼻の投影影がアニメ調の顔に乗ると不気味の谷に落ちるため、顔はフラットに保つ)
+  const headMeshes = collectHeadMeshes(modelMesh);
+  let shadowCasterCount = 0;
+  let shadowReceiverCount = 0;
   for (const mesh of modelMesh.metadata.meshes) {
-    mesh.receiveShadows = true;
+    const flag: number = mesh.material?.metadata?.mmdMaterialFlag ?? 0;
+    if ((flag & PmxObject.Material.Flag.EnabledDrawShadow) !== 0) {
+      shadowGenerator.addShadowCaster(mesh, false);
+      shadowCasterCount++;
+    }
+    mesh.receiveShadows =
+      (flag & PmxObject.Material.Flag.EnabledReceiveShadow) !== 0 && !headMeshes.has(mesh);
+    if (mesh.receiveShadows) {
+      shadowReceiverCount++;
+    }
+  }
+  if (import.meta.env.DEV) {
+    console.log(
+      `セルフシャドウ: 投影${shadowCasterCount} / 受影${shadowReceiverCount} / 頭部除外${headMeshes.size}`,
+      [...headMeshes].map((mesh) => mesh.name)
+    );
   }
 
   // MMDカメラ (カメラVMDがあればバインド)
@@ -93,7 +125,12 @@ export async function buildScene(
     }
     shadowGenerator.addShadowCaster(stageMesh);
   } else {
-    createProceduralStage(scene, modelMesh.metadata.meshes as readonly AbstractMesh[] as AbstractMesh[]);
+    const stage = createProceduralStage(
+      scene,
+      modelMesh.metadata.meshes as readonly AbstractMesh[] as AbstractMesh[],
+      builtinStageVariant
+    );
+    scene.clearColor = stage.clearColor;
   }
 
   // カメラ一式

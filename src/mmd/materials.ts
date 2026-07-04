@@ -10,5 +10,13 @@ import { MmdStandardMaterialBuilder } from "babylon-mmd/esm/Loader/mmdStandardMa
  */
 export function createMaterialBuilder(): MmdStandardMaterialBuilder {
   const builder = new MmdStandardMaterialBuilder();
+
+  // PMXの材質フラグ (セルフシャドウの投影/受影など) を後段のシャドウ設定で参照できるよう保存する
+  const originalAfterBuild = builder.afterBuildSingleMaterial;
+  builder.afterBuildSingleMaterial = (material, materialIndex, materialInfo, imagePathTable, texturesInfo, scene, rootUrl): void => {
+    originalAfterBuild(material, materialIndex, materialInfo, imagePathTable, texturesInfo, scene, rootUrl);
+    material.metadata = { ...material.metadata, mmdMaterialFlag: materialInfo.flag };
+  };
+
   return builder;
 }

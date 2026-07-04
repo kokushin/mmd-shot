@@ -88,8 +88,9 @@ export class EffectPipeline {
 
       if (this._ssao === null) {
         this._ssao = new SSAO2RenderingPipeline("ssao", this._scene, { ssaoRatio: 0.5, blurRatio: 1 }, this._cameras);
-        this._ssao.totalStrength = 0.3;
-        this._ssao.radius = 1.5;
+        // 0.3/1.5 は口の中・鼻下・顎に黒ずみが乗るため、接地感が出る最小限に抑える
+        this._ssao.totalStrength = 0.15;
+        this._ssao.radius = 0.6;
         this._ssao.samples = 16;
       }
       if (this._glow === null) {

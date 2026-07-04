@@ -115,7 +115,11 @@ function createWindow() {
         await click("capture-button"); await sleep(6000); await snap("t6-capture-view.png");
         await click("close-button"); await sleep(1500); await snap("t7-closed.png");
         await click("asset-panel-button"); await sleep(1000); await snap("t8-asset-panel.png");
-        await click("asset-panel-apply"); await sleep(20000); await snap("t9-rebuilt.png");
+        // 再構築はビルトインの明るいスタジオステージで行い、ステージ切替も検証する
+        await mainWindow.webContents.executeJavaScript(
+          `document.getElementById("asset-select-stage").value = "builtin://bright-studio"`
+        );
+        await click("asset-panel-apply"); await sleep(20000); await snap("t9-rebuilt-bright.png");
         console.log("MMD_UI_TEST: 完了");
       } catch (e) {
         console.error("MMD_UI_TEST: 失敗", e);

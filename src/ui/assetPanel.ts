@@ -1,5 +1,6 @@
 // assetPanel.ts - アセット選択パネル
 import type { AssetSelection } from "../core/context";
+import { BRIGHT_STAGE_SELECT_VALUE } from "../stage/proceduralStage";
 import { resolveAssetUrl } from "../utils/env";
 
 interface SelectConfig {
@@ -13,7 +14,7 @@ const SELECT_CONFIGS: SelectConfig[] = [
   { selectId: "asset-select-model", category: "models", noneLabel: null },
   { selectId: "asset-select-motion", category: "motions", noneLabel: null },
   { selectId: "asset-select-camera", category: "cameras", noneLabel: "なし (自動カメラ)" },
-  { selectId: "asset-select-stage", category: "stages", noneLabel: "ビルトインステージ" },
+  { selectId: "asset-select-stage", category: "stages", noneLabel: "ビルトイン (ネオン)" },
   { selectId: "asset-select-audio", category: "audios", noneLabel: "なし" },
 ];
 
@@ -72,6 +73,14 @@ export class AssetPanel {
         select.appendChild(noneOption);
       }
 
+      // ステージにはビルトインの明るいスタジオも選択肢に加える
+      if (config.category === "stages") {
+        const brightOption = document.createElement("option");
+        brightOption.value = BRIGHT_STAGE_SELECT_VALUE;
+        brightOption.textContent = "ビルトイン (明るいスタジオ)";
+        select.appendChild(brightOption);
+      }
+
       const entries = await window.electronAPI.listAssets(config.category);
       for (const entry of entries) {
         const option = document.createElement("option");
@@ -126,7 +135,13 @@ export class AssetPanel {
       motionUrl: resolveAssetUrl(motionPath),
       audioUrl: audioPath !== null ? resolveAssetUrl(audioPath) : null,
       cameraMotionUrl: cameraPath !== null ? resolveAssetUrl(cameraPath) : null,
-      stageUrl: stagePath !== null ? resolveAssetUrl(stagePath) : null,
+      // ビルトインステージの特殊値はファイルパスではないのでそのまま渡す
+      stageUrl:
+        stagePath !== null
+          ? stagePath === BRIGHT_STAGE_SELECT_VALUE
+            ? stagePath
+            : resolveAssetUrl(stagePath)
+          : null,
     };
   }
 }
